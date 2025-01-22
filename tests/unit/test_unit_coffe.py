@@ -16,15 +16,13 @@ def test_fund_fails_without_enough_eth(coffe):
         coffe.fund()
 
 def test_fund_with_money(coffe_funded, account):
-    #arrange
-
-    #Assert
+    #Arrange
     funder = coffe_funded.funders(0)
+    #Assert
     assert funder == account.address
     assert coffe_funded.funder_to_amount_funded(funder) == SEND_VALUE
 
 def test_non_owner_cant_withdraw(coffe_funded, account):
-    #Arrange
     
     #Act
     with boa.env.prank(RANDOM_USER[3]):
@@ -32,13 +30,14 @@ def test_non_owner_cant_withdraw(coffe_funded, account):
             coffe_funded.withdraw()
 
 def test_owner_can_withdraw(coffe_funded):
-    #Arrange
+    #Act
     with boa.env.prank(coffe_funded.OWNER()):
         coffe_funded.withdraw()
+    #Assert 
     assert boa.env.get_balance(coffe_funded.address) == 0
 
 def test_fund_with_money_10_users(coffe):
-    #arrange
+    #Arrange
     total = 0
     balance = 0
     owner_initial_balance = boa.env.get_balance(coffe.OWNER())
@@ -49,7 +48,7 @@ def test_fund_with_money_10_users(coffe):
         total = total + balance   
     contract_balance = SEND_VALUE * len(RANDOM_USER)
 
-    #act
+    #Act
     for user in RANDOM_USER:
         with boa.env.prank(user):
             coffe.fund(value=SEND_VALUE)
@@ -70,5 +69,19 @@ def test_coverage(coffe):
     assert coffe.get_eth_to_usd_rate(SEND_VALUE) > 0
 
 def test_coverage_default(coffe):
-    pass
-    #assert coffe.__default__(SEND_VALUE) == 
+    #Arange
+    initial_balance = boa.env.get_balance(coffe.address)
+    boa.env.set_balance(RANDOM_USER[4], to_wei(10, "ether"))
+
+    #Act
+    with boa.env.prank(RANDOM_USER[4]):
+       coffe.__default__(value=to_wei(1, "ether"))
+  
+    new_balance = boa.env.get_balance(coffe.address)
+
+    #Assert
+    assert new_balance == initial_balance + to_wei(1, 'ether')
+    # Verificar el almacenamiento del financiador
+    funder = coffe.funders(0)
+    assert coffe.funder_to_amount_funded(funder) == to_wei(1, 'ether')
+
